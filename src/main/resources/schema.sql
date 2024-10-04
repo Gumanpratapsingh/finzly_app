@@ -1,0 +1,83 @@
+-- -- Create 'Employee' table
+-- CREATE TABLE Employee (
+--     employee_id INT AUTO_INCREMENT PRIMARY KEY,
+--     name VARCHAR(100) NOT NULL,
+--     email VARCHAR(100) NOT NULL UNIQUE,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
+
+-- -- Create 'Users' table (with manual user_id assignment)
+-- CREATE TABLE Users (
+--     user_id INT NOT NULL PRIMARY KEY,  -- Manual ID assignment
+--     name VARCHAR(100) NOT NULL,
+--     email VARCHAR(100) NOT NULL UNIQUE,
+--     phone_number VARCHAR(15),
+--     billing_address VARCHAR(255),
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
+
+-- -- Create 'ConsumerID' table for electricity connections per user
+-- CREATE TABLE ConsumerID (
+--     consumer_id INT AUTO_INCREMENT PRIMARY KEY,
+--     user_id INT NOT NULL,  -- The user to whom this consumer ID belongs
+--     connection_id VARCHAR(50) NOT NULL UNIQUE,  -- The ID for the electricity connection
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (user_id) REFERENCES Users(user_id)
+-- );
+
+-- -- Create 'Invoice' table with final amount and discount columns
+-- CREATE TABLE Invoice (
+--     invoice_id INT AUTO_INCREMENT PRIMARY KEY,
+--     consumer_id INT NOT NULL,
+--     billing_start_date DATE NOT NULL,
+--     billing_end_date DATE NOT NULL,
+--     bill_due_date DATE NOT NULL,
+--     unit_consumed DECIMAL(10,2) NOT NULL,
+--     amount_due DECIMAL(10,2) NOT NULL,
+--     early_payment_discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+--     online_payment_discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+--     final_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+--     status ENUM('PENDING', 'PAID') DEFAULT 'PENDING',
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (consumer_id) REFERENCES ConsumerID(consumer_id)
+-- );
+
+-- -- Create 'Payment' table
+-- CREATE TABLE Payment (
+--     payment_id INT AUTO_INCREMENT PRIMARY KEY,
+--     invoice_id INT NOT NULL,
+--     consumer_id INT NOT NULL,
+--     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     amount_paid DECIMAL(10,2) NOT NULL,
+--     payment_method ENUM('CASH', 'ONLINE') NOT NULL,
+--     reference_number VARCHAR(100),
+--     status ENUM('SUCCESS', 'FAILED') DEFAULT 'SUCCESS',
+--     FOREIGN KEY (invoice_id) REFERENCES Invoice(invoice_id),
+--     FOREIGN KEY (consumer_id) REFERENCES ConsumerID(consumer_id)
+-- );
+
+-- -- Create 'DueAmount' table (for tracking unpaid bills)
+-- CREATE TABLE DueAmount (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     consumer_id INT NOT NULL,           -- The customer who owes the amount
+--     user_id INT NOT NULL,               -- The user requesting/viewing the due amount
+--     amount DECIMAL(10,2) NOT NULL,      -- The due amount
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (consumer_id) REFERENCES ConsumerID(consumer_id),
+--     FOREIGN KEY (user_id) REFERENCES Users(user_id)  -- Assuming the user is also a customer
+-- );
+
+-- -- Create 'TransactionLedger' table for recording payments
+-- CREATE TABLE TransactionLedger (
+--     transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+--     user_id INT NOT NULL,               -- The user who initiated the payment
+--     consumer_id INT NOT NULL,           -- The consumer for whom the payment was made
+--     user_name VARCHAR(100) NOT NULL,    -- The name of the user who initiated the payment
+--     amount DECIMAL(10,2) NOT NULL,      -- The amount paid
+--     mode_of_payment ENUM('CREDIT_CARD', 'DEBIT_CARD', 'WALLET', 'NET_BANKING', 'UPI') NOT NULL,  -- Payment method
+--     transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Date of transaction
+--     reference_number VARCHAR(100),      -- Transaction reference from payment gateway
+--     status ENUM('SUCCESS', 'FAILED', 'PENDING') NOT NULL DEFAULT 'PENDING',  -- Status of the transaction
+--     FOREIGN KEY (user_id) REFERENCES Users(user_id),
+--     FOREIGN KEY (consumer_id) REFERENCES ConsumerID(consumer_id)
+-- );
