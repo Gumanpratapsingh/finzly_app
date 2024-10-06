@@ -44,7 +44,7 @@ public class WebConfig {
         config.setAllowCredentials(true);
 
         // Allow the specific origin
-        config.setAllowedOrigins(List.of("http://localhost:4200/"));
+        config.setAllowedOrigins(List.of("https://frontendfinzly-production.up.railway.app/"));
 
         // Allow all headers
         config.addAllowedHeader("*");
