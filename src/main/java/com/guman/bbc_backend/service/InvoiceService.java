@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -176,27 +175,10 @@ public class InvoiceService {
     }
 
     private String formatDate(LocalDate date) {
-        return date.format(DateTimeFormatter.ofPattern("MM/dd/yyyy"));
+        return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
     }
 
-    public Invoice processPayment(Integer invoiceId, boolean isOnlinePayment) {
-        Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new RuntimeException("Invoice not found"));
 
-        // Apply discounts based on payment type
-        BigDecimal finalAmount = invoice.getAmountDue();
-        if (isOnlinePayment) {
-            finalAmount = finalAmount.subtract(invoice.getOnlinePaymentDiscount());
-        }
-        // Always apply early payment discount as payment is made on due date
-        finalAmount = finalAmount.subtract(invoice.getEarlyPaymentDiscount());
-
-        invoice.setFinalAmount(finalAmount);
-        invoice.setStatus(Invoice.InvoiceStatus.PAID);
-        invoice.setPaidDate(LocalDate.now());
-
-        return invoiceRepository.save(invoice);
-    }
 
     public byte[] generateInvoice(String phoneNumber, String connectionNumber, LocalDate startDate, LocalDate endDate) {
         Customer customer = customerRepository.findByPhoneNumber(phoneNumber)

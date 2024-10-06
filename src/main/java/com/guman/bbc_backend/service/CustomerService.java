@@ -49,38 +49,30 @@ public class CustomerService {
             throw new RuntimeException("Invalid or expired token");
         }
 
-        try {
-            // Check if the connection ID already exists
-            if (consumerIDRepository.existsByConnectionId(customerDTO.getConnectionId())) {
-                throw new RuntimeException("Connection ID is already in use. Please use another Connection ID.");
-            }
 
+        try {
             // Check if customer exists by phone number or email
             Optional<Customer> existingCustomer = customerRepository.findByPhoneNumber(customerDTO.getPhoneNumber());
             if (existingCustomer.isEmpty()) {
                 existingCustomer = customerRepository.findByEmail(customerDTO.getEmail());
             }
 
+            Customer customer;
             if (existingCustomer.isPresent()) {
-                Customer customer = existingCustomer.get();
+                customer = existingCustomer.get();
                 // Update existing customer information
                 customer.setName(customerDTO.getName());
                 customer.setBillingAddress(customerDTO.getBillingAddress());
                 customer = customerRepository.save(customer);
-
-                // Handle ConsumerID and Invoice creation
-                handleConsumerIDAndInvoice(customer, customerDTO);
-
-                return customer;
             } else {
                 // Create new Customer
-                Customer newCustomer = createCustomer(customerDTO);
-
-                // Handle ConsumerID and Invoice creation
-                handleConsumerIDAndInvoice(newCustomer, customerDTO);
-
-                return newCustomer;
+                customer = createCustomer(customerDTO);
             }
+
+            // Handle ConsumerID and Invoice creation
+            handleConsumerIDAndInvoice(customer, customerDTO);
+
+            return customer;
         } catch (Exception e) {
             System.err.println("Error in addCustomer: " + e.getMessage());
             e.printStackTrace();
@@ -112,9 +104,10 @@ public class CustomerService {
     }
 
     private boolean isDateOverlap(Invoice latestInvoice, CustomerDTO customerDTO) {
-        return (customerDTO.getBillingStartDate().isBefore(latestInvoice.getBillingEndDate()) &&
-                customerDTO.getBillingEndDate().isAfter(latestInvoice.getBillingStartDate()));
+        return !(customerDTO.getBillingStartDate().isAfter(latestInvoice.getBillingEndDate()) ||
+                customerDTO.getBillingStartDate().isEqual(latestInvoice.getBillingEndDate()));
     }
+
 
     private Customer createCustomer(CustomerDTO customerDTO) {
         Customer customer = new Customer();
@@ -142,6 +135,12 @@ public class CustomerService {
         if (!unpaidInvoices.isEmpty()) {
             throw new RuntimeException("Cannot generate a new invoice. There are unpaid invoices for this consumer.");
         }
+         // Check if the due date is within the billing period
+    if (customerDTO.getBillDueDate().isBefore(customerDTO.getBillingEndDate()) || 
+        customerDTO.getBillDueDate().isEqual(customerDTO.getBillingStartDate()) ||
+        customerDTO.getBillDueDate().isBefore(customerDTO.getBillingStartDate())) {
+        throw new RuntimeException("Bill due date must be after the billing end date.");
+    }
 
         Invoice invoice = new Invoice();
         invoice.setConsumerId(consumerID.getConsumerId());
@@ -216,51 +215,46 @@ public class CustomerService {
             throw new RuntimeException("Invalid or expired token");
         }
 
-        List<String> duplicateEntries = new ArrayList<>();
-        List<Customer> customers = new ArrayList<>();
-        List<ConsumerID> consumerIDs = new ArrayList<>();
-        List<Invoice> invoices = new ArrayList<>();
+        List<String> results = new ArrayList<>();
 
         for (CustomerDTO customerDTO : customerDTOs) {
             try {
-                // Check for existing customer
-                Optional<Customer> existingCustomer = customerRepository.findByPhoneNumber(customerDTO.getPhoneNumber());
-                if (existingCustomer.isEmpty()) {
-                    existingCustomer = customerRepository.findByEmail(customerDTO.getEmail());
-                }
-
-                if (existingCustomer.isPresent()) {
-                    // Add to duplicate entries list
-                    duplicateEntries.add("Duplicate entry found for phone: " + customerDTO.getPhoneNumber() + " or email: " + customerDTO.getEmail());
-                    continue; // Skip processing this entry
-                }
-
                 // Check if the connection ID already exists
                 if (consumerIDRepository.existsByConnectionId(customerDTO.getConnectionId())) {
-                    duplicateEntries.add("Duplicate Connection ID found: " + customerDTO.getConnectionId());
+                    results.add("Duplicate Connection ID found: " + customerDTO.getConnectionId());
                     continue; // Skip processing this entry
                 }
 
-                Customer customer = createCustomer(customerDTO);
-                customers.add(customer);
+                // Check if customer with this email already exists
+                Optional<Customer> existingCustomer = customerRepository.findByEmail(customerDTO.getEmail());
+
+                Customer customer;
+                if (existingCustomer.isPresent()) {
+                    customer = existingCustomer.get();
+                    updateCustomer(customer, customerDTO);
+                    results.add("Updated existing customer: " + customerDTO.getName());
+                } else {
+                    customer = createCustomer(customerDTO);
+                    results.add("Created new customer: " + customerDTO.getName());
+                }
 
                 ConsumerID consumerID = createConsumerID(customer, customerDTO);
-                consumerIDs.add(consumerID);
-
                 Invoice invoice = createInvoice(consumerID, customerDTO);
-                invoices.add(invoice);
+
+                results.add("Created ConsumerID and Invoice for: " + customerDTO.getName());
             } catch (Exception e) {
-                // Log the error and continue processing other customers
-                System.err.println("Error processing customer: " + e.getMessage());
-                duplicateEntries.add("Error processing customer " + customerDTO.getName() + ": " + e.getMessage());
+                results.add("Error processing customer " + customerDTO.getName() + ": " + e.getMessage());
             }
         }
 
-        customerRepository.saveAll(customers);
-        consumerIDRepository.saveAll(consumerIDs);
-        invoiceRepository.saveAll(invoices);
+        return results;
+    }
 
-        return duplicateEntries;
+    private void updateCustomer(Customer customer, CustomerDTO customerDTO) {
+        customer.setName(customerDTO.getName());
+        customer.setPhoneNumber(customerDTO.getPhoneNumber());
+        customer.setBillingAddress(customerDTO.getBillingAddress());
+        customerRepository.save(customer);
     }
 
     public List<String> getConnectionIdsByPhoneNumber(String phoneNumber) {

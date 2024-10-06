@@ -15,13 +15,6 @@ public class InvoiceController {
     @Autowired
     private InvoiceService invoiceService;
 
-    @PostMapping("/process-payment/{invoiceId}")
-    public ResponseEntity<Invoice> processPayment(
-            @PathVariable Integer invoiceId,
-            @RequestParam boolean isOnlinePayment) {
-        Invoice processedInvoice = invoiceService.processPayment(invoiceId, isOnlinePayment);
-        return ResponseEntity.ok(processedInvoice);
-    }
 
     @GetMapping("/{invoiceId}")
     public ResponseEntity<Invoice> getInvoice(@PathVariable Integer invoiceId) {

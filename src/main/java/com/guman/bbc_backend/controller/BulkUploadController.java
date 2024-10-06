@@ -1,7 +1,7 @@
 package com.guman.bbc_backend.controller;
 
 import com.guman.bbc_backend.UploadResponse;
-import com.guman.bbc_backend.UploadSummary;
+import com.guman.bbc_backend.UploadStatus;
 import com.guman.bbc_backend.service.BulkUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +21,17 @@ public class BulkUploadController {
     public ResponseEntity<?> uploadCustomers(@RequestParam("file") MultipartFile file,
                                              @RequestHeader("Authorization") String token) {
         try {
-            UploadSummary summary = bulkUploadService.processCsvFile(file, token);
-            return ResponseEntity.ok(summary);
+            String jobId = bulkUploadService.startProcessCsvFile(file, token);
+            return ResponseEntity.ok(new UploadResponse(true, "Processing started", List.of("Job ID: " + jobId)));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new UploadSummary(0, 0, 0, List.of("Error processing file: " + e.getMessage())));
+            return ResponseEntity.badRequest().body(new UploadResponse(false, "Error initiating processing", List.of(e.getMessage())));
         }
+    }
+
+    @GetMapping("/customers/status/{jobId}")
+    public ResponseEntity<?> getUploadStatus(@PathVariable String jobId) {
+        UploadStatus status = bulkUploadService.getUploadStatus(jobId);
+        return ResponseEntity.ok(status);
     }
 }

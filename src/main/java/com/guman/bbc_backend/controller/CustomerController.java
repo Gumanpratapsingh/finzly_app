@@ -13,18 +13,18 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
+//@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
 
     @Autowired
     private CustomerService customerService;
-
-    @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers() {
-        return ResponseEntity.ok(customerService.getAllCustomers());
-    }
+//
+//    @GetMapping
+//    public ResponseEntity<List<Customer>> getAllCustomers() {
+//        return ResponseEntity.ok(customerService.getAllCustomers());
+//    }
 
     @PostMapping
     public ResponseEntity<?> addCustomer(@Valid @RequestBody CustomerDTO customerDTO, @RequestHeader("Authorization") String token, BindingResult bindingResult) {
@@ -55,9 +55,5 @@ public class CustomerController {
         }
     }
 
-    // @GetMapping("/{phoneNumber}/connections")
-    // public ResponseEntity<List<String>> getConnectionIds(@PathVariable String phoneNumber) {
-    //     List<String> connectionIds = customerService.getConnectionIdsByPhoneNumber(phoneNumber);
-    //     return ResponseEntity.ok(connectionIds);
-    // }
+
 }

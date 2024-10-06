@@ -94,14 +94,12 @@ public class PaymentService {
     }
 
     private BigDecimal calculateEarlyPaymentDiscount(BigDecimal amount) {
-        // Implement your early payment discount calculation logic here
-        // For example, 5% discount
+        // 5% discount
         return amount.multiply(new BigDecimal("0.05"));
     }
 
     private BigDecimal calculateOnlinePaymentDiscount(BigDecimal amount) {
-        // Implement your online payment discount calculation logic here
-        // For example, 2% discount
+        // 5% discount
         return amount.multiply(new BigDecimal("0.05"));
     }
 
@@ -138,7 +136,7 @@ public class PaymentService {
         }
     }
 
-    private String generateConnectionId() {
-        return "CONN-" + System.currentTimeMillis();
-    }
+//    private String generateConnectionId() {
+//        return "CONN-" + System.currentTimeMillis();
+//    } now not using
 }

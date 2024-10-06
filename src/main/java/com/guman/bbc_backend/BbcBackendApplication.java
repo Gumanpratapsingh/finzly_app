@@ -4,10 +4,13 @@ package com.guman.bbc_backend;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @EnableScheduling
 @SpringBootApplication
-public class BbcBackendApplication {
+@EnableAsync
+public class
+BbcBackendApplication {
 
 //	@Bean(name = "processBatchExecutor")
 //	public ThreadPoolTaskExecutor processBatchExecutor() throws  InterruptedException{

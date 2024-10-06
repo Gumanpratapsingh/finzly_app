@@ -2,6 +2,8 @@ package com.guman.bbc_backend.dto;
 
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -18,14 +20,9 @@ public class CustomerDTO {
     private LocalDate billDueDate;
     private Double amountDue;
     private String status;
+    @Getter
+    @Setter
     @Pattern(regexp = "^CUST\\d+$", message = "Connection ID must start with CUST followed by numbers")
     private String connectionId;
 
-    public String getConnectionId() {
-        return connectionId;
-    }
-
-    public void setConnectionId(String connectionId) {
-        this.connectionId = connectionId;
-    }
 }

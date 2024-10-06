@@ -1,11 +1,13 @@
 package com.guman.bbc_backend.service;
 
+import com.guman.bbc_backend.UploadStatus;
 import com.guman.bbc_backend.UploadSummary;
 import com.guman.bbc_backend.dto.CustomerCSVDTO;
 import com.guman.bbc_backend.dto.CustomerDTO;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,6 +16,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class BulkUploadService {
@@ -125,9 +130,18 @@ public class BulkUploadService {
                 errors.add("Error processing customer " + csvCustomer.getName() + ": " + e.getMessage());
             }
         }
-        List<String> batchDuplicates = customerService.addCustomers(customerDTOs, token);
-        duplicateEntries.addAll(batchDuplicates);
-        return customerDTOs.size() - batchDuplicates.size();
+        List<String> results = customerService.addCustomers(customerDTOs, token);
+        int successCount = 0;
+        for (String result : results) {
+            if (result.startsWith("Created new customer") || result.startsWith("Updated existing customer")) {
+                successCount++;
+            } else if (result.startsWith("Duplicate Connection ID")) {
+                duplicateEntries.add(result);
+            } else if (result.startsWith("Error")) {
+                errors.add(result);
+            }
+        }
+        return successCount;
     }
 
 //    not using now ab upar krdiya h declare ek sath hi
@@ -230,5 +244,31 @@ public class BulkUploadService {
         }
         
         return digitsOnly;
+    }
+
+    private Map<String, UploadStatus> jobStatusMap = new ConcurrentHashMap<>();
+
+    @Async
+    public void processCsvFileAsync(String jobId, MultipartFile file, String token) {
+        UploadStatus status = jobStatusMap.get(jobId);
+        try {
+            UploadSummary summary = processCsvFile(file, token);
+            status.setSummary(summary);
+            status.setCompleted(true);
+        } catch (Exception e) {
+            status.setError("Error processing CSV file: " + e.getMessage());
+        }
+    }
+
+    public String startProcessCsvFile(MultipartFile file, String token) {
+        String jobId = UUID.randomUUID().toString();
+        UploadStatus status = new UploadStatus();
+        jobStatusMap.put(jobId, status);
+        processCsvFileAsync(jobId, file, token);
+        return jobId;
+    }
+
+    public UploadStatus getUploadStatus(String jobId) {
+        return jobStatusMap.get(jobId);
     }
 }
